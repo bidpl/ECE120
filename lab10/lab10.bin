@@ -2,7 +2,31 @@
 ; Make sure to comment your code properly and don't exceed 
 ; the line limitation for this assignment.  Good luck!
 
+; Positive adder-tron9000
+; Binh-Minh Nguyen (bmn4)
+; ECE 120 Lab 10 - 11/10/2021
+
+; Takes 10 numbers fromm memory (M[x3132:x313B]) and loads the sum of the positive values into R5
+
+; Registers
+; R0 Memory pointer
+; R1 current numbmer being checked
+; R5 Sum
+
+; Memory
+; M[x3132:x313B] 10 numbers to check and summ
+
 0011 0001 0000 0000 ; x3100 - starting address of the program
 
 ; The program description and code starts here
 
+0101 101 101 1 00000	; R5 <- 0		Clear R5
+1110 000 000110000	; R0 <- x3132		Load address of 1st value into R0
+0110 001 000 000000	; R1 <- M[R0]		Load value at Memory Pointer into R1
+0000 100 000000001	; BRn x01		Skip the sum step if value is negative
+0001 101 101 0 00 001	; R5 <- R5 + R1		Increment R5 (Sum) by value if positive
+0001 000 000 1 00001	; R0 <- R0 + 1		Increment R0 (Memory Pointer) by 1 for next value
+0101 001 000 1 01111	; R1 <- R0 AND xF	Mask Last 4 bits of new Memory Pointer and store in R1
+0001 001 001 1 10101	; R1 <- R1 + x15	Subtract B from R1, this will be (+) if Mem Pointer is > x313B
+0000 110 111111001	; BRn 			Repeat if not out of numbers
+1111 000000000000	; Halt
