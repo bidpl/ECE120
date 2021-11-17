@@ -11,12 +11,14 @@
 ; R4 contains counter for inner loop
 ; R5 contains current sum
  
-            x3000
+            .ORIG x3000
  
             LD    R1,INPUT            ; R1 contains input number
-            LD    R2,x3010            ; R2 contains -1
+            LD    R2,NEG1             ; R2 contains -1
+			LD	  R0,ZERO			  ; Clear R0
+			LD	  R5,ZERO			  ; Clear R5
             ADD   R3,R1,R2            ; R3 contains input number -1
-            ADD   R3,,R3,R2           ; R3 contains input number -2
+            ADD   R3,R3,R2            ; R3 contains input number -2
                                       ;   (initializes outer count)
 OUTERLOOP   ADD   R4,R0,R3            ; Copy outer count into inner count
  
@@ -27,15 +29,18 @@ INNERLOOP   ADD   R5,R5,R1            ; Increment sum
             BRzp  INNERLOOP           ; Branch to inner loop if inner count
                                       ;   is positive or zero
             ADD   R1,R0,R5            ; R1 now contains sum result from inner loop
-            LD    R5,x300F            ; Clear R5 (previous sum) to 0
+            LD    R5,ZERO             ; Clear R5 (previous sum) to 0
             ADD   R3,R3,R2            ; Decrement outer count
-            BRpz  OUTERLOOP           ; Branch to outer loop if outer count
+            BRzp  OUTERLOOP           ; Branch to outer loop if outer count
                                       ;   is positive or zero
  
-            STI  R1,  xxxx            ; 5! is stored in the memory location (x30FF)
+            STI  R1,  RESULT          ; 5! is stored in the memory location (x30FF)
             TRAP x25
  
 INPUT      .FILL  x0005               ; Input for X!, in this case X = 5
-           .FILL  x0000               ; Can be used to initialize registers
-           .FILL  xFFFF               ; 2's complement of 1 (i.e. -1)
+ZERO       .FILL  x0000               ; Can be used to initialize registers
+NEG1       .FILL  xFFFF               ; 2's complement of 1 (i.e. -1)
 RESULT     .FILL  x30FF               ; At program completion, the result is stored here
+
+
+.END
