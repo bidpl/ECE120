@@ -1,7 +1,69 @@
+; Print Large Ascii Character 
+; Binh-Minh Nguyen UIUC ECE120 Lab12 11/24/2021
+;
+; Takes an ascii character stored in M[x5002] in a 8x16 grid.
+; Empty pixels are filled with characters in M[x5000]
+; Filled pixels are filled with characters in M[x5001]
+
+; Registers:
+; R0: Output, used by trap x21 (OUT) / Temp
+; R1: Ascii Character to print/offset from FONT_DATA label
+; R2: Nothing (I had it as redudant thing)
+; R3: Nothing (I had it as redudant thing)
+; R4: Row counter
+; R5: Col Counter
+; R6: Row Data
+
+.ORIG x3000
+
+	LDI	R1, CHAR	; Init Registers
+	AND	R4, R4, #0
+
+	ADD	R1, R1, R1	; R1 <- R1*16, ascii value to memory offset
+	ADD	R1, R1, R1
+	ADD	R1, R1, R1
+	ADD	R1, R1, R1
+
+ROWLOOP	ADD	R0, R4, #-16	; Run row loop 16 times (starts at 0, last iteration at 15)
+	BRzp	STOP
+
+	LEA	R0, FONT_DATA	; Get Address of current Row Data (FONT_DATA + 16*Ascii value + row #)
+	ADD	R0, R0, R1
+	ADD	R0, R0, R4
+	LDR	R6, R0, #0	; Load row data into R6
+	AND	R5, R5, #0	; Init col counter 
+
+COLLOOP ADD	R0, R5, #-8	; Run col loop 8 times (starts at 0, last iteration at 7)
+	BRzp	ROW_END		; Run end of row instructions
+
+	ADD	R6, R6, #0	; Set CC based on R6 (Row Data)
+	BRzp	FILL0		; Load R0 with corresponding character for MSB in Row Data
+	LDI	R0, CHAR1
+	BRnzp	#1
+FILL0	LDI	R0, CHAR0
+	OUT			; Print R0 to monitor
+	ADD	R6, R6, R6	; Left shift Row Data
+	ADD	R5, R5, #1	; Increment Col Counter
+	BRnzp	COLLOOP
+
+
+ROW_END	AND	R0, R0, #0	; Print single line feed char to monitor
+	ADD	R0, R0, x0A
+	OUT
+	ADD	R4, R4, #1	; Increment Row counter
+	BRnzp	ROWLOOP
+
+STOP	HALT	
+
+
 ; The table below represents an 8x16 font.  For each 8-bit extended ASCII
 ; character, the table uses 16 memory locations, each of which contains
 ; 8 bits (the high 8 bits, for your convenience) marking pixels in the
 ; line for that character.
+
+CHAR0	.FILL	x5000
+CHAR1	.FILL	x5001
+CHAR	.FILL	x5002
 
 FONT_DATA
 	.FILL	x0000
@@ -4100,3 +4162,5 @@ FONT_DATA
 	.FILL	x0000
 	.FILL	x0000
 	.FILL	x0000
+
+.END
