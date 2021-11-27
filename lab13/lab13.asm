@@ -1,3 +1,73 @@
+; Print Large Ascii String
+; Binh-Minh Nguyen UIUC ECE120 Lab13 11/27/2021
+;
+; Takes a null terminated ascii string starting at M[x5002]
+; Prints each character in a 8x16 grid, characters are put side by side
+; eg. 3 char string would have 24x16 grid
+; Empty pixels are filled with characters in M[x5000]
+; Filled pixels are filled with characters in M[x5001]
+
+; Registers:
+; R0: Output, used by trap x21 (OUT) / Temp
+; R1: Ascii Character to print/offset from FONT_DATA label / row_data
+; R2: Nothing (I had it as redudant thing)
+; R3: Char Counter (Used to loop through the character string)
+; R4: Row counter (Used to loop through 16 rows)
+; R5: Col Counter (Used to loop through 8 columns per character)
+
+.ORIG x3000
+
+	AND	R4, R4, #0	; Clear R4
+
+ROWLOOP	ADD	R0, R4, #-16	; Run row loop 16 times (starts at 0, last iteration at 15)
+	BRzp	STOP
+
+	AND	R3, R3, #0	; Clear Char Coutner
+CHLP	LD	R0, CHAR	; Load address of Character String, start Character loop
+	ADD	R0, R0, R3	; Get address of current character
+	LDR	R1, R0, #0	; Store current ascii char into R1
+
+	BRz	ROW_END		; If characted loaded == x00 (null), end of row
+
+	ADD	R1, R1, R1	; R1 <- R1*16, ascii value to memory offset
+	ADD	R1, R1, R1
+	ADD	R1, R1, R1
+	ADD	R1, R1, R1	
+
+	LEA	R0, FONT_DATA	; Get Address of current Row Data (FONT_DATA + 16*Ascii value + row #)
+	ADD	R0, R0, R1
+	ADD	R0, R0, R4
+	LDR	R1, R0, #0	; Load row data into R1
+	AND	R5, R5, #0	; Init col counter 
+
+COLLOOP ADD	R0, R5, #-8	; Run col loop 8 times (starts at 0, last iteration at 7)
+	BRzp	NXTCHAR		; Once done with character, go to next character
+
+	ADD	R1, R1, #0	; Set CC based on R6 (Row Data)
+	BRzp	FILL0		; Load R0 with corresponding character for MSB in Row Data
+	LDI	R0, CHAR1
+	BRnzp	#1
+FILL0	LDI	R0, CHAR0
+	OUT			; Print R0 to monitor
+	ADD	R1, R1, R1	; Left shift Row Data
+	ADD	R5, R5, #1	; Increment Col Counter
+	BRnzp	COLLOOP
+
+NXTCHAR	ADD	R3, R3, #1	; Increment Char counter
+	BRnzp	CHLP
+
+ROW_END	ADD	R4, R4, #1	; Increment Row counter
+	AND	R0, R0, #0	; Print single line feed char to monitor
+	ADD	R0, R0, x0A
+	OUT
+	BRnzp	ROWLOOP
+
+STOP	HALT
+
+CHAR0	.FILL	x5000
+CHAR1	.FILL	x5001
+CHAR	.FILL	x5002
+
 ; The table below represents an 8x16 font.  For each 8-bit extended ASCII
 ; character, the table uses 16 memory locations, each of which contains
 ; 8 bits (the high 8 bits, for your convenience) marking pixels in the
@@ -4100,3 +4170,5 @@ FONT_DATA
 	.FILL	x0000
 	.FILL	x0000
 	.FILL	x0000
+
+.END
